@@ -1,35 +1,7 @@
 import appConfig from '../config.json'
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
-
-
-function GlobalStyle() {
-    return (
-        <style global jsx>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-          list-style: none;
-        }
-        body {
-          font-family: 'Open Sans', sans-serif;
-        }
-        /* App fit Height */ 
-        html, body, #__next {
-          min-height: 100vh;
-          display: flex;
-          flex: 1;
-        }
-        #__next {
-          flex: 1;
-        }
-        #__next > * {
-          flex: 1;
-        }
-        /* ./App fit Height */ 
-      `}</style>
-    );
-}
+import React, { useEffect } from 'react'
+import { useRouter } from 'next/router'
 
 function Titulo(props) {
     const Tag = props.tag || 'h1';
@@ -47,6 +19,69 @@ function Titulo(props) {
     );
 }
 
+function TextoCartao(props) {
+    const texto = props.texto;
+    return (
+    <Text
+        variant="body4"
+        styleSheet={{
+            color: appConfig.theme.colors.neutrals[200],
+            backgroundColor: appConfig.theme.colors.neutrals[900],
+            padding: '3px 10px',
+            borderRadius: '1000px'
+        }}
+    >
+        {texto}
+    </Text>
+    );
+}
+
+function CartaoUsuario(props) {
+    const username = props.username;
+
+    if (username && username.length > 2) {
+
+        const [data, setData] = React.useState(null);
+        const [isLoading, setLoading] = React.useState(false);
+
+        console.log(username);
+        console.log(isLoading);
+        console.log(data);
+
+        useEffect(() => {
+            setLoading(true);
+            fetch(`https://api.github.com/users/${username}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    setData(data);
+                    setLoading(false);
+                });
+        }, [username]);
+
+        if (isLoading) return <TextoCartao texto='Carregando...'/>;
+        if (!data) {
+            return <TextoCartao texto='Sem informações adicionais.'/>;
+        }
+
+        console.log(data)
+
+        return (
+            <>
+            <Image
+            styleSheet={{
+                borderRadius: '50%',
+                marginBottom: '16px',
+            }}
+            src={`https://github.com/${username}.png`}
+            />
+            <TextoCartao texto={`public repos: ${data.public_repos}`}/>
+            </>
+        );
+    } else {
+        return (<></>);
+    }
+}
+
 // Componente React
 // function HomePage() {
 //     // JSX
@@ -61,11 +96,12 @@ function Titulo(props) {
 // export default HomePage
 
 export default function PaginaInicial() {
-    const username = 'souojor';
+    //const username = 'souojor';
+    const [username, setUsername] = React.useState('souojor');
+    const roteamento = useRouter();
 
     return (
         <>
-            <GlobalStyle />
             <Box
                 styleSheet={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -92,6 +128,13 @@ export default function PaginaInicial() {
                     {/* Formulário */}
                     <Box
                         as="form"
+                        onSubmit={function (event) {
+                            event.preventDefault(); //evita o refresh automático do form.
+                            console.log("Alguém submeteu o form.");
+                            //window.location.href = '/chat'; //essa forma convencional dá refresh na tela
+                            roteamento.push('/chat');
+
+                        }}
                         styleSheet={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             width: { xs: '100%', sm: '50%' }, textAlign: 'center', marginBottom: '32px',
@@ -102,7 +145,21 @@ export default function PaginaInicial() {
                             {appConfig.name}
                         </Text>
 
+                        {/*<input
+                            type="text"
+                            value={username}
+                            onChange={function (event) {
+                                const valor = event.target.value;
+                                setUsername(valor);
+                            }}
+                        />*/}
+
                         <TextField
+                            value={username}
+                            onChange={function (event) {
+                                const valor = event.target.value;
+                                setUsername(valor);
+                            }}
                             fullWidth
                             textFieldColors={{
                                 neutral: {
@@ -144,6 +201,8 @@ export default function PaginaInicial() {
                             minHeight: '240px',
                         }}
                     >
+                        <CartaoUsuario username={username}/>
+                        {/*
                         <Image
                             styleSheet={{
                                 borderRadius: '50%',
@@ -162,6 +221,8 @@ export default function PaginaInicial() {
                         >
                             {username}
                         </Text>
+                        */}
+
                     </Box>
                     {/* Photo Area */}
                 </Box>
